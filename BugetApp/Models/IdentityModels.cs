@@ -1,5 +1,7 @@
-﻿using System.Security.Claims;
+﻿using System.Data.Entity;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using BugetApp.Models.Classes;
 using Microsoft.AspNet.Identity;
 using Microsoft.AspNet.Identity.EntityFramework;
 using Microsoft.AspNet.Identity.Owin;
@@ -27,7 +29,9 @@ namespace BugetApp.Models
         
         public static ApplicationDbContext Create()
         {
+           
             return new ApplicationDbContext();
         }
+        public DbSet<HouseHolds> HouseHolds { get; set; }
     }
 }
