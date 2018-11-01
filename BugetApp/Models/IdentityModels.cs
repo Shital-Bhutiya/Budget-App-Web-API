@@ -33,5 +33,6 @@ namespace BugetApp.Models
             return new ApplicationDbContext();
         }
         public DbSet<HouseHolds> HouseHolds { get; set; }
+        public DbSet<HouseHoldInvites> HouseHoldInvites { get; set; }
     }
 }
