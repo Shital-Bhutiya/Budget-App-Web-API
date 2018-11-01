@@ -16,6 +16,7 @@ using Microsoft.Owin.Security.OAuth;
 using BugetApp.Models;
 using BugetApp.Providers;
 using BugetApp.Results;
+using System.Linq;
 
 namespace BugetApp.Controllers
 {
@@ -29,7 +30,41 @@ namespace BugetApp.Controllers
         public AccountController()
         {
         }
+        [HttpPost]
+        [AllowAnonymous]
+        [Route("ForgotPasswordSendmail")]
 
+        public async Task<IHttpActionResult> ForgotPasswordSendmail(string email)
+        {
+            var db = new ApplicationDbContext();
+            var User = await UserManager.FindByEmailAsync(email);
+            string code = await UserManager.GeneratePasswordResetTokenAsync(User.Id);
+            // var callbackUrl = Url.Link("ChangePassword", new { userId = User.Id, code });
+            await UserManager.SendEmailAsync(User.Id, "Reset Password", "please rest you password by copying this code:" + code);
+            return Ok();
+        }
+        [HttpPost]
+        [AllowAnonymous]
+        [Route("ResetPassword")]
+        public async Task<string> ResetPassword(ForgotPasswordBindingModel model)
+        {
+            if (!ModelState.IsValid)
+            {
+                return "something is wrong chek your email and password";
+            }
+            var user = await UserManager.FindByEmailAsync(model.Email);
+            if (user == null)
+            {
+                // Don't reveal that the user does not exist
+                return "user is not found";
+            }
+            var result = await UserManager.ResetPasswordAsync(user.Id, model.Code, model.Password);
+            if (result.Succeeded)
+            {
+                return "your password has been successfully changed";
+            }
+            return "your password has been successfully changed";
+        }
         public AccountController(ApplicationUserManager userManager,
             ISecureDataFormat<AuthenticationTicket> accessTokenFormat)
         {
@@ -488,7 +523,7 @@ namespace BugetApp.Controllers
                 return HttpServerUtility.UrlTokenEncode(data);
             }
         }
-
+     
         #endregion
     }
 }
