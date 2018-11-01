@@ -1,4 +1,5 @@
-﻿using System.Data.Entity;
+﻿using System.Collections.Generic;
+using System.Data.Entity;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using BugetApp.Models.Classes;
@@ -11,6 +12,13 @@ namespace BugetApp.Models
     // You can add profile data for the user by adding more properties to your ApplicationUser class, please visit https://go.microsoft.com/fwlink/?LinkID=317594 to learn more.
     public class ApplicationUser : IdentityUser
     {
+        public virtual ICollection<HouseHolds>CreatorUser { get; set; }
+        public virtual ICollection<HouseHoldInvites>InvitedUser { get; set; }
+        public ApplicationUser()
+        {
+            CreatorUser = new HashSet<HouseHolds>();
+            InvitedUser = new HashSet<HouseHoldInvites>();
+        }
         public async Task<ClaimsIdentity> GenerateUserIdentityAsync(UserManager<ApplicationUser> manager, string authenticationType)
         {
             // Note the authenticationType must match the one defined in CookieAuthenticationOptions.AuthenticationType

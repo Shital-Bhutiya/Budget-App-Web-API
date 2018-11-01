@@ -11,5 +11,11 @@ namespace BugetApp.Models.Classes
         public string Name { get; set; }
         public string CreatorId { get; set; }
         public virtual ApplicationUser Creator { get; set; }
+        public HouseHolds()
+        {
+            HouseHoldInvites = new HashSet<HouseHoldInvites>();
+        }
+        public virtual ICollection<HouseHoldInvites> HouseHoldInvites { get; set; }
+
     }
 }

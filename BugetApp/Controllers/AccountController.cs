@@ -38,8 +38,11 @@ namespace BugetApp.Controllers
         {
             var db = new ApplicationDbContext();
             var User = await UserManager.FindByEmailAsync(email);
+            if(User == null)
+            {
+                return BadRequest();
+            }
             string code = await UserManager.GeneratePasswordResetTokenAsync(User.Id);
-            // var callbackUrl = Url.Link("ChangePassword", new { userId = User.Id, code });
             await UserManager.SendEmailAsync(User.Id, "Reset Password", "please rest you password by copying this code:" + code);
             return Ok();
         }
