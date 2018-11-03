@@ -8,14 +8,18 @@ namespace BugetApp.Models.Classes
     public class HouseHolds
     {
         public int Id { get; set; }
+
         public string Name { get; set; }
+
         public string CreatorId { get; set; }
         public virtual ApplicationUser Creator { get; set; }
+
         public HouseHolds()
         {
             HouseHoldInvites = new HashSet<HouseHoldInvites>();
+            JoinedUsers = new HashSet<ApplicationUser>();
         }
         public virtual ICollection<HouseHoldInvites> HouseHoldInvites { get; set; }
-
+        public virtual ICollection<ApplicationUser> JoinedUsers { get; set; }
     }
 }

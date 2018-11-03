@@ -9,7 +9,7 @@ namespace BugetApp.Models.Classes
     {
         public int Id { get; set; }
         public int HouseHoldId { get; set; }
-        public virtual HouseHolds HouseHolds { get; set; }
+        public virtual HouseHolds HouseHold { get; set; }
         public string InvitedUserId { get; set; }
         public virtual ApplicationUser InvitedUser{ get; set; }
     }
