@@ -44,10 +44,11 @@ namespace BugetApp.Models
         
         public static ApplicationDbContext Create()
         {
-           
             return new ApplicationDbContext();
         }
         public DbSet<HouseHolds> HouseHolds { get; set; }
         public DbSet<HouseHoldInvites> HouseHoldInvites { get; set; }
+        public DbSet<Category> Categories { get; set; }
+        public DbSet<Account> Accounts { get; set; }
     }
 }

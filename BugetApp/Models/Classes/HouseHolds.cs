@@ -18,8 +18,12 @@ namespace BugetApp.Models.Classes
         {
             HouseHoldInvites = new HashSet<HouseHoldInvites>();
             JoinedUsers = new HashSet<ApplicationUser>();
+            Categories = new HashSet<Category>();
+            Accounts = new HashSet<Account>();
         }
         public virtual ICollection<HouseHoldInvites> HouseHoldInvites { get; set; }
         public virtual ICollection<ApplicationUser> JoinedUsers { get; set; }
+        public virtual ICollection<Category> Categories { get; set; }
+        public virtual ICollection<Account> Accounts { get; set; }
     }
 }
