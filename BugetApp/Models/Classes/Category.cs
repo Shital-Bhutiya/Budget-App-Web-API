@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Web;
+﻿using System.Collections.Generic;
 
 namespace BugetApp.Models.Classes
 {
@@ -14,6 +11,10 @@ namespace BugetApp.Models.Classes
         public int HouseholdId { get; set; }
         public virtual HouseHolds Household { get; set; }
 
-        
+        public virtual ICollection<Transaction> Transactions { get; set; }
+        public Category()
+        {
+            Transactions = new HashSet<Transaction>();
+        }
     }
 }
