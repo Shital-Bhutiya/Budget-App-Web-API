@@ -233,6 +233,7 @@
     <Compile Include="Areas\HelpPage\SampleGeneration\TextSample.cs" />
     <Compile Include="Areas\HelpPage\XmlDocumentationProvider.cs" />
     <Compile Include="Controllers\AccountController.cs" />
+    <Compile Include="Controllers\AccountsController.cs" />
     <Compile Include="Controllers\CategoriesController.cs" />
     <Compile Include="Controllers\HomeController.cs" />
     <Compile Include="Controllers\HouseHoldsController.cs" />
@@ -250,6 +251,7 @@
     <Compile Include="Models\Classes\Transaction.cs" />
     <Compile Include="Models\IdentityModels.cs" />
     <Compile Include="Models\PersonalEmailService.cs" />
+    <Compile Include="Models\ViewModel\AccountsHouseHoldViewModel.cs" />
     <Compile Include="Models\ViewModel\CategoryHouseholdViewModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Providers\ApplicationOAuthProvider.cs" />

@@ -108,7 +108,7 @@ namespace BugetApp.Controllers
             {
                 return BadRequest(ModelState);
             }
-            if (!db.Categories.Any(p => p.HouseholdId == category.HouseholdId))
+            if (!db.HouseHolds.Any(p => p.Id == category.HouseholdId))
             {
                 return Ok("we don't have any household of that id that you gave us");
             }
@@ -140,7 +140,7 @@ namespace BugetApp.Controllers
             db.Categories.Remove(category);
             await db.SaveChangesAsync();
 
-            return Ok("Successfully removed");
+            return Ok("Successfully removed this category");
         }
 
         protected override void Dispose(bool disposing)
