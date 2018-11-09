@@ -29,7 +29,7 @@ namespace BugetApp.Controllers
         // GET: api/Accounts/5
         [ResponseType(typeof(Account))]
         public IHttpActionResult GetAccount(int id)
-         {
+        {
             var accountsHouseHoldViewModel = new AccountsHouseHoldViewModel();
             var household = db.HouseHolds.Where(p => p.Id == id).FirstOrDefault();
             if (household == null)
@@ -43,11 +43,8 @@ namespace BugetApp.Controllers
 
             accountsHouseHoldViewModel.HouseholdName = household.Name;
 
-            var JUEmails = household.JoinedUsers.Select(p => p.UserName).ToList();
-            accountsHouseHoldViewModel.Accounts.Owner = household.Creator.Email;
-            accountsHouseHoldViewModel.Accounts.JoinedUsers = JUEmails;
-           
-
+            accountsHouseHoldViewModel.Accounts = db.Accounts.Where(p => p.HouseholdId == household.Id).Select(i => new AccountsViewModel { Balance = i.Balance, Name = i.Name }).ToList();
+            
             return Ok(accountsHouseHoldViewModel);
         }
 
@@ -137,7 +134,24 @@ namespace BugetApp.Controllers
 
             return Ok("Successfully deleted this account");
         }
-
+        public IHttpActionResult UpdateBalance(int id)
+        {
+            Account account = db.Accounts.FirstOrDefault(p => p.Id == id);
+            if(account == null)
+            {
+                return BadRequest("Account is not exist");
+            }
+            decimal totalAmmount = 0;
+            var Transactions = db.Transactions.Where(p => p.AccountId == account.Id).ToList();
+            foreach (var transaction in Transactions)
+            {
+                if (!transaction.IsVoided)
+                {
+                    totalAmmount += transaction.Ammount;
+                }
+            }
+            return Ok(totalAmmount);
+        }
         protected override void Dispose(bool disposing)
         {
             if (disposing)

@@ -21,7 +21,7 @@ namespace BugetApp.Controllers
         private ApplicationDbContext db = new ApplicationDbContext();
 
         // GET: api/Categories
-        public async Task<IHttpActionResult> GetCategories()
+        public  IHttpActionResult GetCategories()
         {
             var categoryHouseholdViewModel = new CategoryHouseholdViewModel();
             categoryHouseholdViewModel.AllCategory = db.Categories.Select(i => new AllCategoryViewModel { Name = i.Name, Id = i.Id, HouseHoldName = i.Household.Name }).ToList();
@@ -30,7 +30,7 @@ namespace BugetApp.Controllers
 
         // GET: api/Categories/5
         [ResponseType(typeof(Category))]
-        public async Task<IHttpActionResult> GetCategory(int id)
+        public IHttpActionResult GetCategory(int id)
         {
             var categoryHouseholdViewModel = new CategoryHouseholdViewModel();
             var household = db.HouseHolds.Where(p => p.Id == id).FirstOrDefault();

@@ -8,20 +8,15 @@ namespace BugetApp.Models.ViewModel
     public class AccountsHouseHoldViewModel
     {
         public string HouseholdName { get; set; }
-        public AccountsViewModel Accounts { get; set; }
-        //public int Balance { get; set; }
-       public AccountsHouseHoldViewModel()
+        public List<AccountsViewModel> Accounts { get; set; }
+        public AccountsHouseHoldViewModel()
         {
-            Accounts = new AccountsViewModel();
+            Accounts = new List<AccountsViewModel>();
         }
     }
     public class AccountsViewModel
     {
-        public string Owner { get; set; }
-        public List<string> JoinedUsers { get; set; }
-        public AccountsViewModel()
-        {
-            JoinedUsers = new List<string>();
-        }
+        public decimal Balance { get; set; }
+        public string Name { get; set; }
     }
 }

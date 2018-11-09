@@ -8,7 +8,7 @@ namespace BugetApp.Models.Classes
     public class Transaction
     {
         public int Id { get; set; }
-        public int Ammount { get; set; }
+        public decimal Ammount { get; set; }
 
         public string Description { get; set; }
         public DateTimeOffset Date { get; set; }
@@ -19,7 +19,7 @@ namespace BugetApp.Models.Classes
         public int CategoryId { get; set; }
         public virtual Category Category { get; set; }
 
-        public int EnteredById { get; set; }
+        public string EnteredById { get; set; }
         public virtual ApplicationUser EnteredBy { get; set; }
 
         public bool IsVoided { get; set; }
