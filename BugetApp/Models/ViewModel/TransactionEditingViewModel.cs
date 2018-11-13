@@ -1,4 +1,5 @@
-﻿using System;
+﻿using BugetApp.Models.Classes;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -14,5 +15,7 @@ namespace BugetApp.Models.ViewModel
         public DateTimeOffset Date { get; set; }
         [Required]
         public decimal Ammount { get; set; }
+        [Required]
+        public int CategoryId { get; set; }
     }
 }

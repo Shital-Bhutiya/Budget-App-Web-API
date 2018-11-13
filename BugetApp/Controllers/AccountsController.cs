@@ -16,16 +16,15 @@ using Microsoft.AspNet.Identity;
 
 namespace BugetApp.Controllers
 {
+    [Authorize]
     public class AccountsController : ApiController
     {
         private ApplicationDbContext db = new ApplicationDbContext();
-
-        // GET: api/Accounts
-        public IQueryable<Account> GetAccounts()
-        {
-            return db.Accounts;
-        }
-
+        /// <summary>
+        /// Get Particular Account
+        /// </summary>
+        /// <param name="id">Id Of Account</param>
+        /// <returns></returns>
         // GET: api/Accounts/5
         [ResponseType(typeof(Account))]
         public IHttpActionResult GetAccount(int id)
@@ -47,10 +46,15 @@ namespace BugetApp.Controllers
             
             return Ok(accountsHouseHoldViewModel);
         }
-
+        /// <summary>
+        /// Edit Account Information
+        /// </summary>
+        /// <param name="id">Id Of Account</param>
+        /// <param name="account">Infromation To be update</param>
+        /// <returns></returns>
         // PUT: api/Accounts/5
         [ResponseType(typeof(void))]
-        public async Task<IHttpActionResult> PutAccount(int id, Account account)
+        public async Task<IHttpActionResult> PutAccount(int id, AccountsEditingViewModel account)
         {
             if (!ModelState.IsValid)
             {
@@ -65,14 +69,9 @@ namespace BugetApp.Controllers
             {
                 return BadRequest("You are not Authorize");
             }
-            if (id != account.Id)
-            {
-                return BadRequest();
-            }
-            if (account.Name != null)
-            {
-                dbAccount.Name = account.Name;
-            }
+            
+            dbAccount.Name = account.Name;
+            dbAccount.Balance = account.Balance;
             try
             {
                 await db.SaveChangesAsync();
@@ -89,9 +88,13 @@ namespace BugetApp.Controllers
                 }
             }
 
-            return StatusCode(HttpStatusCode.NoContent);
+            return Ok("Successfully updated");
         }
-
+        /// <summary>
+        /// Create Account
+        /// </summary>
+        /// <param name="account">Pass all information Related to account</param>
+        /// <returns></returns>
         // POST: api/Accounts
         [ResponseType(typeof(Account))]
         public async Task<IHttpActionResult> PostAccount(Account account)
@@ -107,20 +110,24 @@ namespace BugetApp.Controllers
             var dbAccount = db.Accounts.Where(p => p.HouseholdId == account.HouseholdId).Select(p => p.Name).ToList();
             if (dbAccount.Contains(account.Name))
             {
-                return Ok("We have same category with this name on this household");
+                return Ok("We have same Accounts with this name on this household");
             }
             db.Accounts.Add(account);
             await db.SaveChangesAsync();
 
             return CreatedAtRoute("DefaultApi", new { id = account.Id }, account);
         }
-
+        /// <summary>
+        /// Delete Account
+        /// </summary>
+        /// <param name="id">Account Id</param>
+        /// <returns></returns>
         // DELETE: api/Accounts/5
         [ResponseType(typeof(Account))]
         public async Task<IHttpActionResult> DeleteAccount(int id)
         {
             Account account = db.Accounts.FirstOrDefault(p => p.Id == id);
-            if ((account.Household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId())) || (account.Household.CreatorId != User.Identity.GetUserId()))
+            if ((!account.Household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId())) || (account.Household.CreatorId != User.Identity.GetUserId()))
             {
                 return BadRequest("You are not Authorize to delete this account");
             }
@@ -134,6 +141,12 @@ namespace BugetApp.Controllers
 
             return Ok("Successfully deleted this account");
         }
+        /// <summary>
+        /// get totla balance of every transaction except void transactions
+        /// </summary>
+        /// <param name="id">Id of account</param>
+        /// <returns></returns>
+        [HttpPost]
         public IHttpActionResult UpdateBalance(int id)
         {
             Account account = db.Accounts.FirstOrDefault(p => p.Id == id);
@@ -150,7 +163,7 @@ namespace BugetApp.Controllers
                     totalAmmount += transaction.Ammount;
                 }
             }
-            return Ok(totalAmmount);
+            return Ok("Your Balance is "+totalAmmount);
         }
         protected override void Dispose(bool disposing)
         {

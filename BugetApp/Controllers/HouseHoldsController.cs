@@ -10,6 +10,7 @@ using System.Web.Http;
 using System.Web.Http.Description;
 using BugetApp.Models;
 using BugetApp.Models.Classes;
+using BugetApp.Models.ViewModel;
 using Microsoft.AspNet.Identity;
 
 namespace BugetApp.Controllers
@@ -18,7 +19,10 @@ namespace BugetApp.Controllers
     public class HouseHoldsController : ApiController
     {
         private ApplicationDbContext db = new ApplicationDbContext();
-
+        /// <summary>
+        /// Get All household
+        /// </summary>
+        /// <returns></returns>
         // GET: api/HouseHolds
         [Route("")]
         public ICollection<string> GetHouseHolds()
@@ -27,6 +31,11 @@ namespace BugetApp.Controllers
         }
 
         // GET: api/HouseHolds/5
+        /// <summary>
+        /// Get Specific HouseHold
+        /// </summary>
+        /// <param name="id">Id of HouseHold</param>
+        /// <returns></returns>
         [ResponseType(typeof(HouseHolds))]
         [Route("GetHouseHolds")]
         public async Task<IHttpActionResult> GetHouseHolds(int id)
@@ -36,14 +45,21 @@ namespace BugetApp.Controllers
             {
                 return NotFound();
             }
-
-            return Ok(houseHolds);
+            var houseHoldViewModel = new HouseHoldViewModel();
+            houseHoldViewModel.Name = houseHolds.Name;
+            houseHoldViewModel.Creator = houseHolds.Creator.Email;
+            houseHoldViewModel.Members = houseHolds.JoinedUsers.Select(p=>p.Email).ToList();
+            return Ok(houseHoldViewModel);
         }
-
+        /// <summary>
+        /// Edit HouseHold
+        /// </summary>
+        /// <param name="id">Id of Household</param>
+        /// <param name="houseHolds">Information of HouseHold</param>
+        /// <returns></returns>
         // PUT: api/HouseHolds/5
         [ResponseType(typeof(void))]
         [Route("PutHouseHolds")]
-
         public async Task<IHttpActionResult> PutHouseHolds(int id, HouseHolds houseHolds)
         {
             if (!ModelState.IsValid)
@@ -73,9 +89,13 @@ namespace BugetApp.Controllers
                     throw;
                 }
             }
-
             return StatusCode(HttpStatusCode.NoContent);
         }
+        /// <summary>
+        /// View Invited User Of household
+        /// </summary>
+        /// <param name="id">id of household</param>
+        /// <returns></returns>
         [HttpPost]
         [Route("InvitedUserViewList")]
         public List<string> InvitedUserViewList(int id)
@@ -92,19 +112,25 @@ namespace BugetApp.Controllers
 
             return invitedUsers;
         }
+        /// <summary>
+        /// Invite a user on household
+        /// </summary>
+        /// <param name="id">id of household</param>
+        /// <param name="email">Email of user</param>
+        /// <returns></returns>
         [HttpPost]
         [Route("InviteUser")]
-        public string InviteUser(int id, string email)
+        public IHttpActionResult InviteUser(int id, string email)
         {
             var household = db.HouseHolds.Where(p => p.Id == id).FirstOrDefault();
             var user = db.Users.Where(p => p.UserName == email).FirstOrDefault();
             if (user == null)
             {
-                return "user is not exist";
+                return BadRequest("user is not exist");
             }
             if (household == null)
             {
-                return "household is not exist";
+                return BadRequest("household is not exist");
             }
             if (household.CreatorId == User.Identity.GetUserId() && !household.HouseHoldInvites.Any(p => p.InvitedUser.Email == email))
             {
@@ -123,72 +149,86 @@ namespace BugetApp.Controllers
                 db.HouseHoldInvites.Add(invites);
                 household.HouseHoldInvites.Add(invites);
                 db.SaveChanges();
-                return "Successfully invited";
+                return Ok("Successfully invited");
             }
             else
             {
-                return "This user has been alerady invited";
+                return Ok("This user has been alerady invited");
             }
         }
+        /// <summary>
+        /// Join the household
+        /// </summary>
+        /// <param name="id">id of household</param>
+        /// <returns></returns>
         [HttpPost]
         [Route("JoinHouseHold")]
-        public string JoinHouseHold(int id, string email)
+        public IHttpActionResult JoinHouseHold(int id)
         {
             var household = db.HouseHolds.Where(p => p.Id == id).FirstOrDefault();
-            var user = db.Users.Where(p => p.UserName == email).FirstOrDefault();
+            var user = db.Users.Where(p => p.Id == User.Identity.GetUserId()).FirstOrDefault();
             if (user == null)
             {
-                return "Umm looks like you don't have account. plz register first.";
+                return BadRequest("Umm looks like you don't have account. plz register first.");
             }
             if (household != null)
             {
-                if (!household.JoinedUsers.Any(p => p.Email == email))
+                if (!household.JoinedUsers.Any(p => p.Email == user.Email))
                 {
-                    var houseHoldInvites = db.HouseHoldInvites.Where(p => p.InvitedUser.Email == email).FirstOrDefault();
+                    var houseHoldInvites = db.HouseHoldInvites.Where(p => p.InvitedUser.Email == user.Email).FirstOrDefault();
                     db.HouseHoldInvites.Remove(houseHoldInvites);
                     household.JoinedUsers.Add(user);
                     db.SaveChanges();
-                    return "Successfully Joined";
+                    return Ok("Successfully Joined");
                 }
                 else
                 {
-                    return "This user has been alerady Joined";
+                    return Ok("This user has been alerady Joined");
                 }
             }
             else
             {
-                return "household is not exist";
+                return Ok("household is not exist");
             }
         }
+        /// <summary>
+        /// Leave a household
+        /// </summary>
+        /// <param name="id">Id of household</param>
+        /// <returns></returns>
         [HttpPost]
         [Route("LeaveHouseHold")]
-        public string LeaveHouseHold(int id, string email)
+        public IHttpActionResult LeaveHouseHold(int id)
         {
             var household = db.HouseHolds.Where(p => p.Id == id).FirstOrDefault();
-            var user = db.Users.Where(p => p.UserName == email).FirstOrDefault();
+            var user = db.Users.Where(p => p.Id == User.Identity.GetUserId()).FirstOrDefault();
             if (user == null)
             {
-                return "This user is not exist in our database";
+                return Ok("This user is not exist in our database");
             }
             if (household != null)
             {
-                if (household.JoinedUsers.Any(p => p.Email == email))
+                if (household.JoinedUsers.Any(p => p.Email == user.Email))
                 {
                     household.JoinedUsers.Remove(user);
                     db.SaveChanges();
-                    return "Successfully Leaved";
+                    return Ok("Successfully Leaved");
                 }
                 else
                 {
-                    return "There is no such user in this household";
+                    return Ok("There is no such user in this household");
                 }
             }
             else
             {
-                return "household is not exist";
+                return Ok("household is not exist");
             }
         }
-
+        /// <summary>
+        /// Create HouseHold
+        /// </summary>
+        /// <param name="houseHolds">information of houseold</param>
+        /// <returns></returns>
         // POST: api/HouseHolds
         [ResponseType(typeof(HouseHolds))]
         [Route("PostHouseHolds")]
@@ -207,7 +247,11 @@ namespace BugetApp.Controllers
             await db.SaveChangesAsync();
             return Ok("Successfully created");
         }
-
+        /// <summary>
+        /// Delete Household
+        /// </summary>
+        /// <param name="id">Id of houseold</param>
+        /// <returns></returns>
         // DELETE: api/HouseHolds/5
         [ResponseType(typeof(HouseHolds))]
         [Route("DeleteHouseHolds")]

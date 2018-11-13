@@ -16,18 +16,26 @@ using Microsoft.AspNet.Identity;
 
 namespace BugetApp.Controllers
 {
+    [Authorize]
     public class CategoriesController : ApiController
     {
         private ApplicationDbContext db = new ApplicationDbContext();
-
+        /// <summary>
+        /// Get All The Categories
+        /// </summary>
+        /// <returns></returns>
         // GET: api/Categories
-        public  IHttpActionResult GetCategories()
+        public IHttpActionResult GetCategories()
         {
             var categoryHouseholdViewModel = new CategoryHouseholdViewModel();
             categoryHouseholdViewModel.AllCategory = db.Categories.Select(i => new AllCategoryViewModel { Name = i.Name, Id = i.Id, HouseHoldName = i.Household.Name }).ToList();
             return Ok(categoryHouseholdViewModel.AllCategory);
         }
-
+        /// <summary>
+        /// Get All The Categories of a household
+        /// </summary>
+        /// <param name="id">Id Of Household</param>
+        /// <returns></returns>
         // GET: api/Categories/5
         [ResponseType(typeof(Category))]
         public IHttpActionResult GetCategory(int id)
@@ -45,17 +53,22 @@ namespace BugetApp.Controllers
 
             categoryHouseholdViewModel.HouseholdName = household.Name;
 
-            categoryHouseholdViewModel.IndividualCategories = db.Categories
+            categoryHouseholdViewModel.Categories = db.Categories
                                 .Where(p => p.HouseholdId == household.Id)
                                 .Select(i => new IndividualCategoryViewModel { Name = i.Name, Id = i.Id })
                                 .ToList();
-            if (categoryHouseholdViewModel.IndividualCategories == null)
+            if (categoryHouseholdViewModel.Categories == null)
             {
                 return NotFound();
             }
             return Ok(categoryHouseholdViewModel);
         }
-
+        /// <summary>
+        /// Edit A Category
+        /// </summary>
+        /// <param name="id">Id OF Category</param>
+        /// <param name="category">information to update</param>
+        /// <returns></returns>
         // PUT: api/Categories/5
         [ResponseType(typeof(void))]
         public async Task<IHttpActionResult> PutCategory(int id, Category category)
@@ -69,7 +82,7 @@ namespace BugetApp.Controllers
             {
                 return Ok("Thre is no category with this id");
             }
-            if ((!dbCategory.Household.JoinedUsers.Any(p=>p.Id == User.Identity.GetUserId())) || (dbCategory.Household.CreatorId != User.Identity.GetUserId()))
+            if ((!dbCategory.Household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId())) || (dbCategory.Household.CreatorId != User.Identity.GetUserId()))
             {
                 return BadRequest("You are not Authorize");
             }
@@ -77,29 +90,33 @@ namespace BugetApp.Controllers
             {
                 return BadRequest();
             }
-            
-            if(category.Name != null)
+
+            if (category.Name != null)
             {
                 dbCategory.Name = category.Name;
             }
             try
-                {
-                    await db.SaveChangesAsync();
-                }
-                catch (DbUpdateConcurrencyException)
-                {
-                    if (!CategoryExists(id))
-                    {
-                        return NotFound();
-                    }
-                    else
-                    {
-                        throw;
-                    }
-                }
-                return Ok("Successfully Updated");
+            {
+                await db.SaveChangesAsync();
             }
-
+            catch (DbUpdateConcurrencyException)
+            {
+                if (!CategoryExists(id))
+                {
+                    return NotFound();
+                }
+                else
+                {
+                    throw;
+                }
+            }
+            return Ok("Successfully Updated");
+        }
+        /// <summary>
+        /// Create A Category
+        /// </summary>
+        /// <param name="category">Information Of Category</param>
+        /// <returns></returns>
         // POST: api/Categories
         [ResponseType(typeof(Category))]
         public async Task<IHttpActionResult> PostCategory(Category category)
@@ -122,13 +139,17 @@ namespace BugetApp.Controllers
 
             return CreatedAtRoute("DefaultApi", new { id = category.Id }, category);
         }
-
+        /// <summary>
+        /// Delete A Category
+        /// </summary>
+        /// <param name="id">Id of category</param>
+        /// <returns></returns>
         // DELETE: api/Categories/5
         [ResponseType(typeof(Category))]
         public async Task<IHttpActionResult> DeleteCategory(int id)
         {
             Category category = db.Categories.FirstOrDefault(p => p.Id == id);
-            if ((category.Household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId())) || (category.Household.CreatorId != User.Identity.GetUserId()))
+            if ((!category.Household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId())) || (category.Household.CreatorId != User.Identity.GetUserId()))
             {
                 return BadRequest("You are not Authorize to delete");
             }

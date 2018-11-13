@@ -8,11 +8,11 @@ namespace BugetApp.Models.ViewModel
     public class CategoryHouseholdViewModel
     {
         public string HouseholdName { get; set; }
-        public List<IndividualCategoryViewModel> IndividualCategories { get; set; }
+        public List<IndividualCategoryViewModel> Categories { get; set; }
         public List<AllCategoryViewModel> AllCategory { get; set; }
         public CategoryHouseholdViewModel()
         {
-            IndividualCategories = new List<IndividualCategoryViewModel>();
+            Categories = new List<IndividualCategoryViewModel>();
             AllCategory = new List<AllCategoryViewModel>();
         }
     }

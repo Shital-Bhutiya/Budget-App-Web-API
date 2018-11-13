@@ -16,29 +16,16 @@ using Microsoft.AspNet.Identity;
 
 namespace BugetApp.Controllers
 {
+    [Authorize]
     public class TransactionsController : ApiController
     {
         private ApplicationDbContext db = new ApplicationDbContext();
-
-        // GET: api/Transactions
-        public IQueryable<Transaction> GetTransactions()
-        {
-            return db.Transactions;
-        }
-
-        // GET: api/Transactions/5
-        [ResponseType(typeof(Transaction))]
-        public async Task<IHttpActionResult> GetTransaction(int id)
-        {
-            Transaction transaction = await db.Transactions.FindAsync(id);
-            if (transaction == null)
-            {
-                return NotFound();
-            }
-
-            return Ok(transaction);
-        }
-
+       /// <summary>
+       /// Edit Transaction
+       /// </summary>
+       /// <param name="id">Id Of Transaction</param>
+       /// <param name="transaction">Information to update</param>
+       /// <returns></returns>
         // PUT: api/Transactions/5
         [ResponseType(typeof(void))]
         public async Task<IHttpActionResult> PutTransaction(int id, TransactionEditingViewModel transaction)
@@ -52,9 +39,19 @@ namespace BugetApp.Controllers
             {
                 return BadRequest("Transaction is not exist");
             }
+            if (!db.Categories.Any(p => p.Id == transaction.CategoryId))
+            {
+                return BadRequest("Category not found");
+            }
+            var HouseHold = db.Categories.Where(p => p.Id == transaction.CategoryId).Select(p => p.Household).FirstOrDefault();
+            if (!HouseHold.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId() || HouseHold.CreatorId != User.Identity.GetUserId()))
+            {
+                return Ok("You are not authorized to Edit Transaction");
+            }
             dbTransaction.Description = transaction.Description;
             dbTransaction.Date = transaction.Date;
             dbTransaction.Ammount = transaction.Ammount;
+            dbTransaction.CategoryId = transaction.CategoryId;
             UpdateBalance(dbTransaction);
             try
             {
@@ -73,7 +70,11 @@ namespace BugetApp.Controllers
             }
             return StatusCode(HttpStatusCode.NoContent);
         }
-
+        /// <summary>
+        /// Create A transaction
+        /// </summary>
+        /// <param name="transaction">Transaction Infromation</param>
+        /// <returns></returns>
         // POST: api/Transactions
         [ResponseType(typeof(Transaction))]
         public async Task<IHttpActionResult> PostTransaction(Transaction transaction)
@@ -90,7 +91,11 @@ namespace BugetApp.Controllers
             {
                 return BadRequest("Category not found");
             }
-
+            var HouseHold = db.Categories.Where(p => p.Id == transaction.CategoryId).Select(p => p.Household).FirstOrDefault();
+            if (!HouseHold.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId() || HouseHold.CreatorId != User.Identity.GetUserId()))
+            {
+                return Ok("You are not authorized to Create Transaction");
+            }
             transaction.IsVoided = false;
             transaction.EnteredById = User.Identity.GetUserId();
             db.Transactions.Add(transaction);
@@ -98,7 +103,12 @@ namespace BugetApp.Controllers
             UpdateBalance(transaction);
             return Ok("Successfully created transaction");
         }
-
+        /// <summary>
+        /// Void A transaction
+        /// </summary>
+        /// <param name="id">id of transaction</param>
+        /// <returns></returns>
+        [HttpPost]
         public IHttpActionResult VoidTransction(int id)
         {
             var transaction = db.Transactions.Include(p => p.Account).FirstOrDefault(p => p.Id == id);
@@ -106,18 +116,28 @@ namespace BugetApp.Controllers
             {
                 return BadRequest("Transaction is not exist");
             }
+            var HouseHold = db.Categories.Where(p => p.Id == transaction.CategoryId).Select(p => p.Household).FirstOrDefault();
+            if (!HouseHold.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId() || HouseHold.CreatorId != User.Identity.GetUserId()))
+            {
+                return Ok("You are not authorized to Void Transaction");
+            }
             transaction.IsVoided = true;
             UpdateBalance(transaction);
-            return Ok();
+            return Ok("Voided Successfully");
         }
 
         private void UpdateBalance(Transaction transaction)
         {
-            Transaction dbtransaction =  db.Transactions.Where(p=>p.Id == transaction.Id).Include(p=>p.Account).FirstOrDefault();
+            Transaction dbtransaction = db.Transactions.Where(p => p.Id == transaction.Id).Include(p => p.Account).FirstOrDefault();
 
-            dbtransaction.Account.Balance += transaction.Ammount;
+            dbtransaction.Account.Balance -= transaction.Ammount ;
             db.SaveChanges();
         }
+        /// <summary>
+        /// Delete A transaction
+        /// </summary>
+        /// <param name="id">Id of Transaction</param>
+        /// <returns></returns>
         // DELETE: api/Transactions/5
         [ResponseType(typeof(Transaction))]
         public async Task<IHttpActionResult> DeleteTransaction(int id)
@@ -127,11 +147,16 @@ namespace BugetApp.Controllers
             {
                 return NotFound();
             }
+            var HouseHold = db.Categories.Where(p => p.Id == transaction.CategoryId).Select(p => p.Household).FirstOrDefault();
 
+            if (!HouseHold.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId() || HouseHold.CreatorId != User.Identity.GetUserId()))
+            {
+                return Ok("You are not authorized to Void Transaction");
+            }
             db.Transactions.Remove(transaction);
             await db.SaveChangesAsync();
 
-            return Ok(transaction);
+            return Ok("Successfully Deleted Transaction");
         }
 
         protected override void Dispose(bool disposing)
