@@ -40,11 +40,11 @@ namespace BugetApp.Controllers
             var User = await UserManager.FindByEmailAsync(email);
             if(User == null)
             {
-                return BadRequest();
+                return BadRequest("User is not Exist");
             }
             string code = await UserManager.GeneratePasswordResetTokenAsync(User.Id);
-            await UserManager.SendEmailAsync(User.Id, "Reset Password", "please rest you password by copying this code:" + code);
-            return Ok();
+            await UserManager.SendEmailAsync(User.Id, "Reset Password", $"<a href='http://localhost:3000/forgotpassword?code={HttpUtility.UrlEncode(code)}'>please rest you password </a>");
+            return Ok("Check Your email to reset the password");
         }
         [HttpPost]
         [AllowAnonymous]
@@ -62,9 +62,9 @@ namespace BugetApp.Controllers
                 return "user is not found";
             }
             var result = await UserManager.ResetPasswordAsync(user.Id, model.Code, model.Password);
-            if (result.Succeeded)
+            if (!result.Succeeded)  
             {
-                return "your password has been successfully changed";
+                return "your password has not been successfully changed";
             }
             return "your password has been successfully changed";
         }

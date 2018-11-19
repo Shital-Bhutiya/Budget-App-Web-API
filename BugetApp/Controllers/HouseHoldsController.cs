@@ -16,6 +16,7 @@ using Microsoft.AspNet.Identity;
 namespace BugetApp.Controllers
 {
     [RoutePrefix("api/HouseHolds")]
+    [Authorize]
     public class HouseHoldsController : ApiController
     {
         private ApplicationDbContext db = new ApplicationDbContext();
@@ -25,11 +26,37 @@ namespace BugetApp.Controllers
         /// <returns></returns>
         // GET: api/HouseHolds
         [Route("")]
-        public ICollection<string> GetHouseHolds()
+        public IHttpActionResult GetHouseHolds()
         {
-            return db.HouseHolds.Select(p => p.Name).ToList();
+            var userId = User.Identity.GetUserId();
+            var HouseHolds = db.HouseHolds.Where(p=>p.CreatorId == userId)                
+                .Select(p => new MyHoseholdViewModel
+                {
+                    Id = p.Id,
+                    Name=p.Name,
+                    Creator = p.Creator.Email,
+                    Members = p.JoinedUsers.Select(t => new MyHouseHoldMembersVieModel
+                    {
+                        Email = t.Email
+                    }).ToList()
+                })
+                .ToList();
+            return Ok(HouseHolds);
         }
-
+        [Route("GetMyHouseHolds")]
+        public IHttpActionResult GetMyHouseHolds()
+        {
+            var userID = User.Identity.GetUserId();
+            var HouseHolds = db.HouseHolds.Where(p=>p.CreatorId == userID)
+                .Select(p => new MyHoseholdViewModel
+                {
+                    Id = p.Id,
+                    Name = p.Name,
+                    Creator = p.Creator.Email
+                })
+                .ToList();
+            return Ok(HouseHolds);
+        }
         // GET: api/HouseHolds/5
         /// <summary>
         /// Get Specific HouseHold
@@ -60,18 +87,21 @@ namespace BugetApp.Controllers
         // PUT: api/HouseHolds/5
         [ResponseType(typeof(void))]
         [Route("PutHouseHolds")]
-        public async Task<IHttpActionResult> PutHouseHolds(int id, HouseHolds houseHolds)
+        public async Task<IHttpActionResult> PutHouseHolds(int id,HouseHolds houseHolds)
         {
             if (!ModelState.IsValid)
             {
                 return BadRequest(ModelState);
             }
-
-            if (id != houseHolds.Id)
-            {
-                return BadRequest();
-            }
             var household = db.HouseHolds.Where(p => p.Id == houseHolds.Id).FirstOrDefault();
+            if(household == null)
+            {
+                return Ok("HouseHold is not exist");
+            }
+            if (string.IsNullOrWhiteSpace(houseHolds.Name))
+            {
+                return BadRequest("Name Must Required");
+            }
             household.CreatorId = User.Identity.GetUserId();
             household.Name = houseHolds.Name;
             try
@@ -89,29 +119,48 @@ namespace BugetApp.Controllers
                     throw;
                 }
             }
-            return StatusCode(HttpStatusCode.NoContent);
+            return Ok("Success fully edited");
         }
         /// <summary>
         /// View Invited User Of household
         /// </summary>
         /// <param name="id">id of household</param>
         /// <returns></returns>
-        [HttpPost]
         [Route("InvitedUserViewList")]
-        public List<string> InvitedUserViewList(int id)
+        public IHttpActionResult InvitedUserViewList()
         {
-            var householdId = db.HouseHolds.Where(p => p.Id == id).Select(p => p.Id).FirstOrDefault();
-            if (householdId == 0)
+            var userId = User.Identity.GetUserId();
+            var invitedUsers = db.HouseHoldInvites.Where(p => p.InvitedUserId==userId).Select(p => new MyHoseholdViewModel
+            {
+                Id = p.HouseHold.Id,
+                Name = p.HouseHold.Name,
+                Creator = p.HouseHold.Creator.Email
+            }).ToList();
+            if (invitedUsers == null)
             {
                 var error = "this ID is not found";
                 List<string> myList = new List<string> { error };
 
-                return myList;
+                return Ok(myList);
             }
-            var invitedUsers = db.HouseHoldInvites.Where(p => p.HouseHoldId == householdId).Select(prop => prop.InvitedUser.UserName).ToList();
 
-            return invitedUsers;
+            return Ok(invitedUsers);
         }
+        [HttpPost]
+        [Route("JoinedHouseHold")]
+        public IHttpActionResult JoinedHouseHold()
+        {
+            var userID = User.Identity.GetUserId();
+            var houseHoldIds = db.HouseHolds.Where(p => p.JoinedUsers.Any(t => t.Id == userID))
+                                .Select(p => new MyHoseholdViewModel
+                                {
+                                    Id = p.Id,
+                                    Name = p.Name
+                                })
+                .ToList();
+            return Ok(houseHoldIds);
+        }
+        //}
         /// <summary>
         /// Invite a user on household
         /// </summary>
@@ -156,6 +205,7 @@ namespace BugetApp.Controllers
                 return Ok("This user has been alerady invited");
             }
         }
+
         /// <summary>
         /// Join the household
         /// </summary>
@@ -166,7 +216,8 @@ namespace BugetApp.Controllers
         public IHttpActionResult JoinHouseHold(int id)
         {
             var household = db.HouseHolds.Where(p => p.Id == id).FirstOrDefault();
-            var user = db.Users.Where(p => p.Id == User.Identity.GetUserId()).FirstOrDefault();
+            var userID = User.Identity.GetUserId();
+            var user = db.Users.Where(p => p.Id == userID).FirstOrDefault();
             if (user == null)
             {
                 return BadRequest("Umm looks like you don't have account. plz register first.");
@@ -201,7 +252,8 @@ namespace BugetApp.Controllers
         public IHttpActionResult LeaveHouseHold(int id)
         {
             var household = db.HouseHolds.Where(p => p.Id == id).FirstOrDefault();
-            var user = db.Users.Where(p => p.Id == User.Identity.GetUserId()).FirstOrDefault();
+            var userID = User.Identity.GetUserId();
+            var user = db.Users.Where(p => p.Id ==userID).FirstOrDefault();
             if (user == null)
             {
                 return Ok("This user is not exist in our database");
