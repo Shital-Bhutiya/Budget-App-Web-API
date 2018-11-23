@@ -46,7 +46,7 @@ namespace BugetApp.Controllers
             {
                 return Ok("Household is not exist");
             }
-            if (!household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId() || household.CreatorId != User.Identity.GetUserId()))
+            if ((!household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId())) && (household.CreatorId != User.Identity.GetUserId()))
             {
                 return Ok("You are not authorized to get categories");
             }
@@ -57,11 +57,11 @@ namespace BugetApp.Controllers
                                 .Where(p => p.HouseholdId == household.Id)
                                 .Select(i => new IndividualCategoryViewModel { Name = i.Name, Id = i.Id })
                                 .ToList();
-            if (categoryHouseholdViewModel.Categories == null)
+            if (categoryHouseholdViewModel.Categories.Count == 0)
             {
-                return NotFound();
+                return Ok("No Categories on this household");
             }
-            return Ok(categoryHouseholdViewModel);
+            return Ok(categoryHouseholdViewModel.Categories);
         }
         /// <summary>
         /// Edit A Category
@@ -82,7 +82,7 @@ namespace BugetApp.Controllers
             {
                 return Ok("Thre is no category with this id");
             }
-            if ((!dbCategory.Household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId())) || (dbCategory.Household.CreatorId != User.Identity.GetUserId()))
+            if ((!dbCategory.Household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId())) && (dbCategory.Household.CreatorId != User.Identity.GetUserId()))
             {
                 return BadRequest("You are not Authorize");
             }
@@ -129,6 +129,12 @@ namespace BugetApp.Controllers
             {
                 return Ok("we don't have any household of that id that you gave us");
             }
+            var household = db.HouseHolds.FirstOrDefault(p => p.Id == category.HouseholdId);
+            if (!household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId()) && 
+                household.CreatorId != User.Identity.GetUserId())
+            {
+                return Ok("You are not Authorize");
+            }
             var categories = db.Categories.Where(p => p.HouseholdId == category.HouseholdId).Select(p => p.Name).ToList();
             if (categories.Contains(category.Name))
             {
@@ -137,7 +143,7 @@ namespace BugetApp.Controllers
             db.Categories.Add(category);
             await db.SaveChangesAsync();
 
-            return CreatedAtRoute("DefaultApi", new { id = category.Id }, category);
+            return Ok("Successfully created");
         }
         /// <summary>
         /// Delete A Category
@@ -149,7 +155,7 @@ namespace BugetApp.Controllers
         public async Task<IHttpActionResult> DeleteCategory(int id)
         {
             Category category = db.Categories.FirstOrDefault(p => p.Id == id);
-            if ((!category.Household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId())) || (category.Household.CreatorId != User.Identity.GetUserId()))
+            if ((!category.Household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId())) && (category.Household.CreatorId != User.Identity.GetUserId()))
             {
                 return BadRequest("You are not Authorize to delete");
             }

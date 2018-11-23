@@ -14,7 +14,7 @@ namespace BugetApp.Models.ViewModel
         [Required]
         public DateTimeOffset Date { get; set; }
         [Required]
-        public decimal Ammount { get; set; }
+        public decimal Amount { get; set; }
         [Required]
         public int CategoryId { get; set; }
     }

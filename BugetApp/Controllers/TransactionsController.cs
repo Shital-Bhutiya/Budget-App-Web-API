@@ -20,6 +20,16 @@ namespace BugetApp.Controllers
     public class TransactionsController : ApiController
     {
         private ApplicationDbContext db = new ApplicationDbContext();
+
+        public IHttpActionResult GetTransaction(int id)
+        {
+            var Transactions = db.Transactions.Where(p => p.Account.HouseholdId == id).Select(a=> new TransactionViewModel{ Category = a.Category.Name, Account = a.Account.Name,Id =a.Id,Description=a.Description,Date =a.Date, Amount = a.Amount, IsVoided = a.IsVoided }).ToList();
+            if(Transactions.Count == 0)
+            {
+                return Ok("No Transaction Found");
+            }
+            return Ok(Transactions);
+        }
        /// <summary>
        /// Edit Transaction
        /// </summary>
@@ -50,7 +60,7 @@ namespace BugetApp.Controllers
             }
             dbTransaction.Description = transaction.Description;
             dbTransaction.Date = transaction.Date;
-            dbTransaction.Ammount = transaction.Ammount;
+            dbTransaction.Amount = transaction.Amount;
             dbTransaction.CategoryId = transaction.CategoryId;
             UpdateBalance(dbTransaction);
             try
@@ -85,14 +95,14 @@ namespace BugetApp.Controllers
             }
             if (!db.Accounts.Any(p => p.Id == transaction.AccountId))
             {
-                return BadRequest("Account id not found");
+                return Ok("Account id not found");
             }
             if (!db.Categories.Any(p => p.Id == transaction.CategoryId))
             {
-                return BadRequest("Category not found");
+                return Ok("Category not found");
             }
             var HouseHold = db.Categories.Where(p => p.Id == transaction.CategoryId).Select(p => p.Household).FirstOrDefault();
-            if (!HouseHold.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId() || HouseHold.CreatorId != User.Identity.GetUserId()))
+            if (!(HouseHold.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId())) && HouseHold.CreatorId != User.Identity.GetUserId())
             {
                 return Ok("You are not authorized to Create Transaction");
             }
@@ -114,10 +124,10 @@ namespace BugetApp.Controllers
             var transaction = db.Transactions.Include(p => p.Account).FirstOrDefault(p => p.Id == id);
             if (transaction == null)
             {
-                return BadRequest("Transaction is not exist");
+                return Ok("Transaction is not exist");
             }
             var HouseHold = db.Categories.Where(p => p.Id == transaction.CategoryId).Select(p => p.Household).FirstOrDefault();
-            if (!HouseHold.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId() || HouseHold.CreatorId != User.Identity.GetUserId()))
+            if (!HouseHold.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId()) && HouseHold.CreatorId != User.Identity.GetUserId())
             {
                 return Ok("You are not authorized to Void Transaction");
             }
@@ -129,8 +139,14 @@ namespace BugetApp.Controllers
         private void UpdateBalance(Transaction transaction)
         {
             Transaction dbtransaction = db.Transactions.Where(p => p.Id == transaction.Id).Include(p => p.Account).FirstOrDefault();
-
-            dbtransaction.Account.Balance -= transaction.Ammount ;
+            if(transaction.Amount > 0)
+            {
+                dbtransaction.Account.Balance -= transaction.Amount;
+            }
+            else
+            {
+                dbtransaction.Account.Balance += transaction.Amount;
+            }
             db.SaveChanges();
         }
         /// <summary>

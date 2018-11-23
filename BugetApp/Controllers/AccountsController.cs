@@ -35,16 +35,16 @@ namespace BugetApp.Controllers
             {
                 return Ok("Household is not exist");
             }
-            if (!household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId() || household.CreatorId != User.Identity.GetUserId()))
+            if (!household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId()) && household.CreatorId != User.Identity.GetUserId())
             {
                 return Ok("You are not authorized to get Account");
             }
 
             accountsHouseHoldViewModel.HouseholdName = household.Name;
 
-            accountsHouseHoldViewModel.Accounts = db.Accounts.Where(p => p.HouseholdId == household.Id).Select(i => new AccountsViewModel { Balance = i.Balance, Name = i.Name }).ToList();
+            accountsHouseHoldViewModel.Accounts = db.Accounts.Where(p => p.HouseholdId == household.Id).Select(i => new AccountsViewModel { Id= i.Id,Balance = i.Balance, Name = i.Name }).ToList();
             
-            return Ok(accountsHouseHoldViewModel);
+            return Ok(accountsHouseHoldViewModel.Accounts);
         }
         /// <summary>
         /// Edit Account Information
@@ -65,7 +65,7 @@ namespace BugetApp.Controllers
             {
                 return Ok("Thre is no Account with this id");
             }
-            if ((!dbAccount.Household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId())) || (dbAccount.Household.CreatorId != User.Identity.GetUserId()))
+            if ((!dbAccount.Household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId())) && (dbAccount.Household.CreatorId != User.Identity.GetUserId()))
             {
                 return BadRequest("You are not Authorize");
             }
@@ -115,7 +115,7 @@ namespace BugetApp.Controllers
             db.Accounts.Add(account);
             await db.SaveChangesAsync();
 
-            return CreatedAtRoute("DefaultApi", new { id = account.Id }, account);
+            return Ok("Congratulations you have created account successfully");
         }
         /// <summary>
         /// Delete Account
@@ -127,7 +127,7 @@ namespace BugetApp.Controllers
         public async Task<IHttpActionResult> DeleteAccount(int id)
         {
             Account account = db.Accounts.FirstOrDefault(p => p.Id == id);
-            if ((!account.Household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId())) || (account.Household.CreatorId != User.Identity.GetUserId()))
+            if ((!account.Household.JoinedUsers.Any(p => p.Id == User.Identity.GetUserId())) && (account.Household.CreatorId != User.Identity.GetUserId()))
             {
                 return BadRequest("You are not Authorize to delete this account");
             }
@@ -154,16 +154,16 @@ namespace BugetApp.Controllers
             {
                 return BadRequest("Account is not exist");
             }
-            decimal totalAmmount = 0;
+            decimal totalAmount = 0;
             var Transactions = db.Transactions.Where(p => p.AccountId == account.Id).ToList();
             foreach (var transaction in Transactions)
             {
                 if (!transaction.IsVoided)
                 {
-                    totalAmmount += transaction.Ammount;
+                    totalAmount += transaction.Amount;
                 }
             }
-            return Ok("Your Balance is "+totalAmmount);
+            return Ok("Your Balance is "+totalAmount);
         }
         protected override void Dispose(bool disposing)
         {
