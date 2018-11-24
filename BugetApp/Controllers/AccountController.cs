@@ -169,7 +169,7 @@ namespace BugetApp.Controllers
                 return GetErrorResult(result);
             }
 
-            return Ok();
+            return Ok("Password Has been changed");
         }
 
         // POST api/Account/SetPassword

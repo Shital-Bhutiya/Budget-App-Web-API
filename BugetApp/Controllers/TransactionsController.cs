@@ -23,19 +23,19 @@ namespace BugetApp.Controllers
 
         public IHttpActionResult GetTransaction(int id)
         {
-            var Transactions = db.Transactions.Where(p => p.Account.HouseholdId == id).Select(a=> new TransactionViewModel{ Category = a.Category.Name, Account = a.Account.Name,Id =a.Id,Description=a.Description,Date =a.Date, Amount = a.Amount, IsVoided = a.IsVoided }).ToList();
-            if(Transactions.Count == 0)
+            var Transactions = db.Transactions.Where(p => p.Account.HouseholdId == id).Select(a => new TransactionViewModel { Category = a.Category.Name, Account = a.Account.Name, Id = a.Id, Description = a.Description, Date = a.Date, Amount = a.Amount, IsVoided = a.IsVoided }).ToList();
+            if (Transactions.Count == 0)
             {
                 return Ok("No Transaction Found");
             }
             return Ok(Transactions);
         }
-       /// <summary>
-       /// Edit Transaction
-       /// </summary>
-       /// <param name="id">Id Of Transaction</param>
-       /// <param name="transaction">Information to update</param>
-       /// <returns></returns>
+        /// <summary>
+        /// Edit Transaction
+        /// </summary>
+        /// <param name="id">Id Of Transaction</param>
+        /// <param name="transaction">Information to update</param>
+        /// <returns></returns>
         // PUT: api/Transactions/5
         [ResponseType(typeof(void))]
         public async Task<IHttpActionResult> PutTransaction(int id, TransactionEditingViewModel transaction)
@@ -58,11 +58,11 @@ namespace BugetApp.Controllers
             {
                 return Ok("You are not authorized to Edit Transaction");
             }
+            dbTransaction.Account.Balance += transaction.Amount;
             dbTransaction.Description = transaction.Description;
             dbTransaction.Date = transaction.Date;
             dbTransaction.Amount = transaction.Amount;
             dbTransaction.CategoryId = transaction.CategoryId;
-            UpdateBalance(dbTransaction);
             try
             {
                 await db.SaveChangesAsync();
@@ -108,9 +108,10 @@ namespace BugetApp.Controllers
             }
             transaction.IsVoided = false;
             transaction.EnteredById = User.Identity.GetUserId();
+            var account = db.Accounts.Where(p => p.Id == transaction.AccountId).FirstOrDefault();
+            account.Balance += transaction.Amount;
             db.Transactions.Add(transaction);
             await db.SaveChangesAsync();
-            UpdateBalance(transaction);
             return Ok("Successfully created transaction");
         }
         /// <summary>
@@ -131,22 +132,18 @@ namespace BugetApp.Controllers
             {
                 return Ok("You are not authorized to Void Transaction");
             }
-            transaction.IsVoided = true;
-            UpdateBalance(transaction);
+            if (!transaction.IsVoided)
+            {
+                transaction.IsVoided = true;
+                UpdateBalance(transaction);
+            }
             return Ok("Voided Successfully");
         }
 
         private void UpdateBalance(Transaction transaction)
         {
             Transaction dbtransaction = db.Transactions.Where(p => p.Id == transaction.Id).Include(p => p.Account).FirstOrDefault();
-            if(transaction.Amount > 0)
-            {
-                dbtransaction.Account.Balance -= transaction.Amount;
-            }
-            else
-            {
-                dbtransaction.Account.Balance += transaction.Amount;
-            }
+            dbtransaction.Account.Balance -= transaction.Amount;
             db.SaveChanges();
         }
         /// <summary>
